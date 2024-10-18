@@ -23,7 +23,7 @@ if __name__ == "__main__":
         print("RequestError:", 404)
         sys.exit(1)
 
-    employee_name = data[0]["user"]["name"]
+    employee_name = user_info.get("name")
     total_tasks = len(data)
     done_tasks = [task for task in data if task["completed"]]
     total_done_tasks = len(done_tasks)
