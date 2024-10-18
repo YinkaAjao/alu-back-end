@@ -1,38 +1,56 @@
 #!/usr/bin/python3
-"""Script to use a REST API for a given employee ID, returns
-information about his/her TODO list progress and export in JSON"""
+"""
+    python script that exports data in the JSON format
+"""
 import json
 import requests
-import sys
-
+from sys import argv
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"UsageError: python3 {__file__} employee_id(int)")
-        sys.exit(1)
+    """
+        request user info by employee ID
+    """
+    request_employee = requests.get(
+        'https://jsonplaceholder.typicode.com/users/{}/'.format(argv[1]))
+    """
+        convert json to dictionary
+    """
+    user = json.loads(request_employee.text)
+    """
+        extract username
+    """
+    username = user.get("username")
 
-    API_URL = "https://jsonplaceholder.typicode.com"
-    EMPLOYEE_ID = sys.argv[1]
+    """
+        request user's TODO list
+    """
+    request_todos = requests.get(
+        'https://jsonplaceholder.typicode.com/users/{}/todos'.format(argv[1]))
+    """
+        dictionary to store task status(completed) in boolean format
+    """
+    tasks = {}
+    """
+        convert json to list of dictionaries
+    """
+    user_todos = json.loads(request_todos.text)
+    """
+        loop through dictionary & get completed tasks
+    """
+    for dictionary in user_todos:
+        tasks.update({dictionary.get("title"): dictionary.get("completed")})
 
-    response = requests.get(
-        f"{API_URL}/users/{EMPLOYEE_ID}/todos",
-        params={"_expand": "user"}
-    )
-    data = response.json()
+    task_list = []
+    for k, v in tasks.items():
+        task_list.append({
+            "task": k,
+            "completed": v,
+            "username": username
+        })
 
-    if not len(data):
-        print("RequestError:", 404)
-        sys.exit(1)
-
-    user_tasks = {EMPLOYEE_ID: []}
-    for task in data:
-        task_dict = {
-            "task": task["title"],
-            "completed": task["completed"],
-            "username": task["user"]["username"]
-        }
-        user_tasks[EMPLOYEE_ID].append(task_dict)
-
-    with open(f"{EMPLOYEE_ID}.json", "w") as file:
-        json.dump(user_tasks, file)
-        
+    json_to_dump = {argv[1]: task_list}
+    """
+        export to JSON
+    """
+    with open('{}.json'.format(argv[1]), mode='w') as file:
+        json.dump(json_to_dump, file)
