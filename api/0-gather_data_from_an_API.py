@@ -1,41 +1,34 @@
 #!/usr/bin/python3
+"""Script to use a REST API for a given employee ID, returns
+information about his/her TODO list progress"""
 import requests
 import sys
 
-def get_employee_todo_progress(employee_id):
-    """
-    Fetches and displays the TODO list progress for a given employee.
-    
-    Args:
-        employee_id (int): The ID of the employee whose TODO list progress will be fetched.
-    
-    The function prints the following information to the console:
-        - Employee's name and the number of completed tasks out of the total tasks.
-        - The titles of the completed tasks, each preceded by a tab and a space.
-    
-    Raises:
-        ValueError: If employee_id is not an integer.
-    """
-    # Define the API endpoints for the user and the todos
-    user_url = f'https://jsonplaceholder.typicode.com/users/{employee_id}'
-    todos_url = f'https://jsonplaceholder.typicode.com/todos?userId={employee_id}'
-    
-    # Make a request to get employee details
-    user_response = requests.get(user_url)
-    # Make a request to get the employee's TODO list
-    todos_response = requests.get(todos_url)
-    
-    # Check if the API response is successful for both requests
-    if user_response.status_code != 200 or todos_response.status_code != 200:
-        print("Error: Unable to fetch data from the API")
-        return
-    
-    # Parse the JSON response into Python data structures
-    user_data = user_response.json()
-    todos_data = todos_response.json()
-    
-    # Extract the employee's name
-    employee_name = user_data.get('name')
-    
-    # Calculate the total number of tasks and completed tasks
-    t
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print(f"UsageError: python3 {__file__} employee_id(int)")
+        sys.exit(1)
+
+    API_URL = "https://jsonplaceholder.typicode.com"
+    EMPLOYEE_ID = sys.argv[1]
+
+    response = requests.get(
+        f"{API_URL}/users/{EMPLOYEE_ID}/todos",
+        params={"_expand": "user"}
+    )
+    data = response.json()
+
+    if not len(data):
+        print("RequestError:", 404)
+        sys.exit(1)
+
+    employee_name = data[0]["user"]["name"]
+    total_tasks = len(data)
+    done_tasks = [task for task in data if task["completed"]]
+    total_done_tasks = len(done_tasks)
+
+    print(f"Employee {employee_name} is done with tasks"
+          f"({total_done_tasks}/{total_tasks}):")
+    for task in done_tasks:
+        print(f"\t {task['title']}")
