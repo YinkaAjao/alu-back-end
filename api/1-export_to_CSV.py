@@ -1,41 +1,34 @@
 #!/usr/bin/python3
-"""Script that gets user data (Todo list) from API
-and then export the result to csv file. """
-
+"""Script to use a REST API for a given employee ID, returns
+information about his/her TODO list progress and export in CSV"""
 import csv
 import requests
 import sys
 
 
-def main():
-    """main function"""
-    user_id = int(sys.argv[1])
-    todo_url = 'https://jsonplaceholder.typicode.com/todos'
-    user_url = 'https://jsonplaceholder.typicode.com/users/{}'.format(user_id)
-
-    file_content = []
-
-    response = requests.get(todo_url)
-    user_name = requests.get(user_url).json().get('username')
-
-    for todo in response.json():
-        if todo.get('userId') == user_id:
-            file_content.append(
-                [str(user_id),
-                 user_name,
-                 todo.get('completed'),
-                 "{}".format(todo.get('title'))])
-
-    print(file_content)
-    file_name = "{}.csv".format(user_id)
-    with open(file_name, 'w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        for row in file_content:
-            for item in row:
-                str(item)
-            csv_writer.writerow(row)
-        print('file written successfully')
-
-
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) != 2:
+        print(f"UsageError: python3 {__file__} employee_id(int)")
+        sys.exit(1)
+
+    API_URL = "https://jsonplaceholder.typicode.com"
+    EMPLOYEE_ID = sys.argv[1]
+
+    response = requests.get(
+        f"{API_URL}/users/{EMPLOYEE_ID}/todos",
+        params={"_expand": "user"}
+    )
+    data = response.json()
+
+    if not len(data):
+        print("RequestError:", 404)
+        sys.exit(1)
+
+    username = data[0]["user"]["username"]
+
+    with open(f"{EMPLOYEE_ID}.csv", "w", newline="") as file:
+        writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
+        for task in data:
+            writer.writerow(
+                [EMPLOYEE_ID, username, str(task["completed"]), task["title"]]
+            )
